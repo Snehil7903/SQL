@@ -1,0 +1,40 @@
+SELECT DISTINCT num AS ConsecutiveNums
+FROM (
+    SELECT num, 
+           LEAD(num, 1) OVER (ORDER BY id) AS next1, 
+           LEAD(num, 2) OVER (ORDER BY id) AS next2
+    FROM Logs
+) temp
+WHERE num = next1 AND num = next2;
+
+
+SELECT DISTINCT l1.num AS ConsecutiveNums
+FROM Logs l1, Logs l2, Logs l3
+WHERE l1.id = l2.id - 1 
+  AND l2.id = l3.id - 1
+  AND l1.num = l2.num 
+  AND l2.num = l3.num;
+
+
+SELECT DISTINCT l1.num AS ConsecutiveNums
+FROM Logs l1
+JOIN Logs l2 ON l1.id + 1 = l2.id
+JOIN Logs l3 ON l2.id + 1 = l3.id
+WHERE l1.num = l2.num AND l2.num = l3.num;
+
+
+import pandas as pd
+
+def consecutive_numbers(logs: pd.DataFrame) -> pd.DataFrame:
+    # 1. Create two new columns by shifting the 'num' column
+    # shift(-1) looks at the next row; shift(-2) looks at the one after
+    logs['next'] = logs['num'].shift(-1)
+    logs['next_next'] = logs['num'].shift(-2)
+    
+    # 2. Filter rows where the number matches both shifts
+    is_consecutive = (logs['num'] == logs['next']) & (logs['num'] == logs['next_next'])
+    
+    # 3. Get unique values and format as a DataFrame
+    unique_nums = logs.loc[is_consecutive, 'num'].unique()
+    
+    return pd.DataFrame({'ConsecutiveNums': unique_nums})
